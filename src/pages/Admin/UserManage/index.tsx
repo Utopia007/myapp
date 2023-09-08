@@ -1,144 +1,142 @@
-import Footer from '@/components/Footer';
-import {register} from '@/services/ant-design-pro/api';
-import {
-  LockOutlined,
-  UserOutlined,
-} from '@ant-design/icons';
-import {
-  LoginForm,
-  ProFormText,
-} from '@ant-design/pro-components';
-import { message, Tabs } from 'antd';
-import React, { useState } from 'react';
-import { history } from 'umi';
-import styles from './index.less';
-import {CIYUAN_CIRCLE, SYSTEM_LOGO} from "@/constants";
+import { useRef } from 'react';
+import type { ProColumns, ActionType } from '@ant-design/pro-table';
+import ProTable, { TableDropdown } from '@ant-design/pro-table';
+import { searchUsers } from "@/services/ant-design-pro/api";
+import {Image} from "antd";
 
-const Register: React.FC = () => {
-  const [type, setType] = useState<string>('account');
-  const handleSubmit = async (values: API.RegisterParams) => {
-    const {userPassword, checkPassword} = values;
-    //校验
-    if (userPassword !== checkPassword){
-      message.error('两次密码输入不一致，请重试');
-      return;
-    }
-
-    try {
-      // 注册
-      const id = await register(values);
-
-      if (id) {
-        const defaultLoginSuccessMessage = '注册成功！';
-        message.success(defaultLoginSuccessMessage);
-
-        /** 此方法会跳转到 redirect 参数所在的位置 */
-        if (!history) return;
-        const { query } = history.location;
-        const { redirect } = query as {
-          redirect: string;
-        };
-        history.push('/user/login/redirect=' + redirect);
-        return;
-      }else {
-        throw new Error(`register error id = ${id}`)
-      }
-    } catch (error) {
-      const defaultLoginFailureMessage = '注册失败，请重试！';
-      message.error(defaultLoginFailureMessage);
-    }
-  };
-  return (
-    <div className={styles.container}>
-      <div className={styles.content}>
-        <LoginForm
-          submitter = {{
-            searchConfig: {
-              submitText: '注册'
-            }
-          }}
-          logo={<img alt="logo" src={SYSTEM_LOGO} />}
-          title="鹿又笑用户中心"
-          subTitle={ <a href={CIYUAN_CIRCLE} target="_blank" rel="noreferrer"> 最好的次元圈子,点此进入 </a> }
-          initialValues={{
-            autoLogin: true,
-          }}
-          //点击注册后，会执行里面的方法
-          onFinish={async (values) => {
-            await handleSubmit(values as API.LoginParams);
-          }}
-        >
-
-          <Tabs activeKey={type} onChange={setType}>
-            <Tabs.TabPane key="account" tab={'账号密码注册'} />
-          </Tabs>
-          {type === 'account' && (
-            <>
-              <ProFormText
-                name="userAccount"
-                fieldProps={{
-                  size: 'large',
-                  prefix: <UserOutlined className={styles.prefixIcon} />,
-                }}
-                placeholder={'请输入注册账号'}
-                rules={[
-                  {
-                    required: true,
-                    message: '用户名是必填项！',
-                  },
-                ]}
-              />
-              <ProFormText.Password
-                name="userPassword"
-                fieldProps={{
-                  size: 'large',
-                  prefix: <LockOutlined className={styles.prefixIcon} />,
-                }}
-                placeholder={'请输入密码'}
-                rules={[
-                  {
-                    required: true,
-                    message: '密码是必填项！',
-                  },
-                  {
-                    min: 8,
-                    type: "string",
-                    message: '密码长度不能小于8位！',
-                  },
-                ]}
-              />
-              <ProFormText.Password
-                name="checkPassword"
-                fieldProps={{
-                  size: 'large',
-                  prefix: <LockOutlined className={styles.prefixIcon} />,
-                }}
-                placeholder={'请再次输入密码'}
-                rules={[
-                  {
-                    required: true,
-                    message: '密码是必填项！',
-                  },
-                  {
-                    min: 8,
-                    type: "string",
-                    message: '密码长度不能小于8位！',
-                  },
-                ]}
-              />
-            </>
-          )}
-          {/*{status === 'error' && loginType === 'mobile' && <LoginMessage content="验证码错误" />}*/}
-          <div
-            style={{
-              marginBottom: 24,
-            }}
-          >
-          </div>
-        </LoginForm>
+const columns: ProColumns<API.CurrentUser>[] = [
+  {
+    dataIndex: 'id',
+    valueType: 'indexBorder',
+    width: 48,
+  },
+  {
+    title: '用户名',
+    dataIndex: 'userName',
+    copyable: true,
+  },
+  {
+    title: '用户账户',
+    dataIndex: 'userAccount',
+    copyable: true,
+  },
+  {
+    title: '头像',
+    dataIndex: 'avatarUrl',
+    render: (_, record) => (
+      <div>
+        <Image src={record.avatarUrl} width={100} />
       </div>
-      <Footer />
-    </div>
+    ),
+  },
+  {
+    title: '性别',
+    dataIndex: 'gender',
+  },
+  {
+    title: '电话',
+    dataIndex: 'phone',
+    copyable: true,
+  },
+  {
+    title: '邮件',
+    dataIndex: 'email',
+    copyable: true,
+  },
+  {
+    title: '状态',
+    dataIndex: 'userStatus',
+  },
+  {
+    title: '星球编号',
+    dataIndex: 'planetCode',
+  },
+  {
+    title: '角色',
+    dataIndex: 'userRole',
+    valueType: 'select',
+    valueEnum: {
+      0: { text: '普通用户', status: 'Default' },
+      1: {
+        text: '管理员',
+        status: 'Success',
+      },
+    },
+  },
+  {
+    title: '创建时间',
+    dataIndex: 'createTime',
+    valueType: 'dateTime',
+  },
+  {
+    title: '操作',
+    valueType: 'option',
+    render: (text, record, _, action) => [
+      <a
+        key="editable"
+        onClick={() => {
+          action?.startEditable?.(record.id);
+        }}
+      >
+        编辑
+      </a>,
+      <a href={record.url} target="_blank" rel="noopener noreferrer" key="view">
+        查看
+      </a>,
+      <TableDropdown
+        key="actionGroup"
+        onSelect={() => action?.reload()}
+        menus={[
+          { key: 'copy', name: '复制' },
+          { key: 'delete', name: '删除' },
+        ]}
+      />,
+    ],
+  },
+];
+
+export default () => {
+  const actionRef = useRef<ActionType>();
+  return (
+    <ProTable<API.CurrentUser>
+      columns={columns}
+      actionRef={actionRef}
+      cardBordered
+      request={async (params = {}, sort, filter) => {
+        console.log(sort, filter);
+        const userList = await searchUsers();
+        return {
+          data: userList
+        }
+      }}
+      editable={{
+        type: 'multiple',
+      }}
+      columnsState={{
+        persistenceKey: 'pro-table-singe-demos',
+        persistenceType: 'localStorage',
+      }}
+      rowKey="id"
+      search={{
+        labelWidth: 'auto',
+      }}
+      form={{
+        // 由于配置了 transform，提交的参与与定义的不同这里需要转化一下
+        syncToUrl: (values, type) => {
+          if (type === 'get') {
+            return {
+              ...values,
+              created_at: [values.startTime, values.endTime],
+            };
+          }
+          return values;
+        },
+      }}
+      pagination={{
+        pageSize: 5,
+      }}
+      dateFormatter="string"
+      headerTitle="高级表格"
+    />
   );
 };
-export default Register;

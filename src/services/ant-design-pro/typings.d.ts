@@ -11,9 +11,20 @@ declare namespace API {
     phone: string;
     email: string;
     userStatus: string;
+    planetCode: string;
     createTime: Data;
-    userRole: boolean;
+    userRole: number;
   };
+
+  /**
+   * 对接后端的通用返回类
+   */
+  type BaseResponse<T> = {
+    code: number;
+    data: T;
+    message: string;
+    description: string;
+  }
 
   type LoginResult = {
     status?: string;
@@ -66,6 +77,7 @@ declare namespace API {
     userAccount?: string;
     userPassword?: string;
     checkPassword?: string;
+    planetCode?: string;
     type?: string;
   };
 

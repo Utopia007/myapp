@@ -8,8 +8,6 @@ import {history, Link} from 'umi';
 import defaultSettings from '../config/defaultSettings';
 import {currentUser as queryCurrentUser} from './services/ant-design-pro/api';
 import {RequestConfig} from "@@/plugin-request/request";
-// import {RequestConfig} from "@@/plugin-request/request";
-// import {RequestConfig} from "umi";
 
 const isDev = process.env.NODE_ENV === 'development';
 const loginPath = '/user/login';
@@ -44,15 +42,17 @@ export async function getInitialState(): Promise<{
     }
     return undefined;
   };
-  // 如果不是登录页面，执行
+  // 如果是无需登录的页面，不执行
   if (NO_NEED_LOGIN_WHITE_LIST.includes(history.location.pathname)) {
     return {
+      // @ts-ignore
       fetchUserInfo,
       settings: defaultSettings,
     };
   }
   const currentUser = await fetchUserInfo();
   return {
+    // @ts-ignore
     fetchUserInfo,
     currentUser,
     settings: defaultSettings,
@@ -70,7 +70,7 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
     footerRender: () => <Footer />,
     onPageChange: () => {
       const { location } = history;
-      if (NO_NEED_LOGIN_WHITE_LIST.includes(location.pathname)){
+      if (NO_NEED_LOGIN_WHITE_LIST.includes(location.pathname)) {
         return;
       }
       // 如果没有登录，重定向到 login
@@ -101,7 +101,7 @@ export const layout: RunTimeLayoutConfig = ({ initialState, setInitialState }) =
           {children}
           {!props.location?.pathname?.includes('/login') && (
             <SettingDrawer
-              disableUrlParams
+              //disableUrlParams
               enableDarkTheme
               settings={initialState?.settings}
               onSettingChange={(settings) => {
